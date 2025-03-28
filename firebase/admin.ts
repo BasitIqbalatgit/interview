@@ -1,33 +1,26 @@
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
+import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 
-const initFirebaseAdmin = () => {
-    const apps = getApps();
+// Initialize Firebase Admin SDK
+function initFirebaseAdmin() {
+  const apps = getApps();
 
-    if (apps.length === 0) {
-        // Make sure all required environment variables are available
-        const { FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY } = process.env;
+  if (!apps.length) {
+    initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        // Replace newlines in the private key
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      }),
+    });
+  }
 
-        if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY) {
-            throw new Error('Missing required Firebase environment variables.');
-        }
+  return {
+    auth: getAuth(),
+    db: getFirestore(),
+  };
+}
 
-        // Initialize Firebase app with credentials
-        initializeApp({
-            credential: cert({
-                projectId: FIREBASE_PROJECT_ID,
-                clientEmail: FIREBASE_CLIENT_EMAIL,
-                privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"), // Ensure correct format for private key
-            }),
-        });
-    }
-
-    return {
-        auth: getAuth(),
-        db: getFirestore(),
-    };
-};
-
-// Exporting auth and db after initialization
-export const { db, auth } = initFirebaseAdmin();
+export const { auth, db } = initFirebaseAdmin();
